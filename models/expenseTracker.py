@@ -1,5 +1,6 @@
 from services.reader import read_csv
 from services.cleaner import clean_row
+from services.processor import process_total_per_kategori
 
 
 class ExpenseTracker:
@@ -55,18 +56,7 @@ class ExpenseTracker:
     # =========================
     def get_by_category(self):
 
-        result = {}
-
-        for record in self.records:
-
-            if record.is_valid():
-
-                if record.kategori not in result:
-                    result[record.kategori] = 0
-
-                result[record.kategori] += record.amount
-
-        return result
+        return process_total_per_kategori(self.records)
 
     # =========================
     # SHOW ERROR DATA
