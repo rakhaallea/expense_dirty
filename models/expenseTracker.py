@@ -1,89 +1,108 @@
-import csv
-
+from services.reader import read_csv
 from services.cleaner import clean_row
 
 
 class ExpenseTracker:
+
+    # =========================
+    # CONSTRUCTOR
+    # =========================
     def __init__(self):
-        self.expenses = []
 
-    # READ CSV
-    def read_csv(self, file_path):
-        
-        with open(file_path, newline='', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
+        # list object ExpenseRecord
+        self.records = []
 
-            for row in reader:
-                # CLEANING DATA
-                expense = clean_row(row)
-                self.expenses.append(expense)
+        # list error logs
+        self.error_logs = []
 
-    # PROCESS TOTAL PER KATEGORI
-    def total_per_kategori(self):
+    # =========================
+    # LOAD CSV
+    # =========================
+    def load_csv(self, file_path):
+
+        rows = read_csv(file_path)
+
+        for row in rows:
+
+            record = clean_row(row)
+
+            self.records.append(record)
+
+            # simpan log error
+            if record.is_invalid():
+
+                self.error_logs.append({
+                    "row": row,
+                    "message": "Invalid amount"
+                })
+
+    # =========================
+    # GET TOTAL
+    # =========================
+    def get_total(self):
+
+        total = 0
+
+        for record in self.records:
+
+            if record.is_valid():
+                total += record.amount
+
+        return total
+
+    # =========================
+    # GET TOTAL PER CATEGORY
+    # =========================
+    def get_by_category(self):
+
         result = {}
 
-        for exp in self.expenses:
+        for record in self.records:
 
-            if exp.is_valid():
+            if record.is_valid():
 
-                if exp.kategori not in result:
-                    result[exp.kategori] = 0
+                if record.kategori not in result:
+                    result[record.kategori] = 0
 
-                result[exp.kategori] += exp.amount
+                result[record.kategori] += record.amount
 
         return result
 
-    # HITUNG TOTAL VALID & ERROR
-    def summary_status(self):
-        valid = 0
-        error = 0
-
-        for exp in self.expenses:
-
-            if exp.is_valid():
-                valid += 1
-
-            elif exp.is_invalid():
-                error += 1
-
-        return valid, error
-
-    # TAMPILKAN DATA ERROR
+    # =========================
+    # SHOW ERROR DATA
+    # =========================
     def show_error_data(self):
 
         print("=" * 70)
         print("DATA ERROR".center(70))
         print("=" * 70)
 
-        for i, exp in enumerate(self.expenses, 1):
+        for i, record in enumerate(self.records, 1):
 
-            if exp.is_invalid():
+            if record.is_invalid():
 
-                print(f"{i}. Tanggal  : {exp.tanggal}")
-                print(f"   Kategori : {exp.kategori}")
-                print(f"   Amount   : Rp {exp.amount:,.0f}".replace(",", "."))
-                print(f"   Status   : {exp.status}")
+                print(f"{i}. Tanggal  : {record.tanggal}")
+                print(f"   Kategori : {record.kategori}")
+                print(f"   Amount   : Rp {record.amount:,.0f}".replace(",", "."))
+                print(f"   Status   : {record.status}")
 
                 print("-" * 70)
 
-    # TAMPILKAN TOTAL PER KATEGORI
-    def show_total_per_kategori(self):
-
-        totals = self.total_per_kategori()
-
-        print("\n" + "=" * 70)
-        print("TOTAL PENGELUARAN PER KATEGORI".center(70))
-        print("=" * 70)
-
-        for kategori, total in totals.items():
-            print(f"{kategori:<20} Rp {total:>15,.0f}".replace(",", "."))
-
-        print("=" * 70)
-
-    # TAMPILKAN SUMMARY
+    # =========================
+    # SHOW SUMMARY
+    # =========================
     def show_summary(self):
 
-        valid, error = self.summary_status()
+        valid = 0
+        error = 0
+
+        for record in self.records:
+
+            if record.is_valid():
+                valid += 1
+
+            elif record.is_invalid():
+                error += 1
 
         print("\n" + "=" * 70)
         print("TOTAL DATA OK DAN ERROR".center(70))
@@ -92,5 +111,25 @@ class ExpenseTracker:
         print(f"Jumlah Data Error {'':>5}: {error}")
         print(f"Jumlah Data Valid {'':>5}: {valid}")
         print(f"Total Data {'':>12}: {valid + error}")
+
+        print("=" * 70)
+
+    # =========================
+    # SHOW CATEGORY TOTAL
+    # =========================
+    def show_total_per_kategori(self):
+
+        totals = self.get_by_category()
+
+        print("\n" + "=" * 70)
+        print("TOTAL PENGELUARAN PER KATEGORI".center(70))
+        print("=" * 70)
+
+        for kategori, total in totals.items():
+
+            print(
+                f"{kategori:<20} Rp {total:>15,.0f}"
+                .replace(",", ".")
+            )
 
         print("=" * 70)

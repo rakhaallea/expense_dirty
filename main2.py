@@ -10,4 +10,3 @@ def read_csv(file_path):
             rows.append(row)
 
     return rows
-
